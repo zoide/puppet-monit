@@ -1,0 +1,11 @@
+# $Id: process.erb 2964 2009-11-13 11:36:38Z uwaechte $
+#
+# MANAGED BY PUPPET #
+#
+# monitor process <%= process_name_real %>
+check process <%= process_name_real %>
+     with pidfile "<%= process_pidfile_real %>"
+     start program = "<%= start_real %>"
+     stop program  = "<%= stop_real %>"
+     if 2 restarts within 5 cycles then timeout 
+     <%= additional %>

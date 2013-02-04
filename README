@@ -1,0 +1,14 @@
+# $Id$
+
+Writtenby: udo.waechter@uni-osnabrueck.de
+License: GPL
+
+== Module: monit
+Manages the monit daemon, http://mmonit.com/monit/
+Currently it supports only process monitoring.
+
+== Notice:
+In order to use this module two global variables must exist:
+* +$LOCAL_SMTP+ - the fqdn of you smtp server
+* +$ROOT_MAIL+  - the email-address where notifications go
+
