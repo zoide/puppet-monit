@@ -23,46 +23,48 @@
 # _Sample Usage:_
 #   +include monit+
 #
-class monit ($ensure = "present") {
+class monit ($ensure = 'present', $runinterval = 60) {
   $monitetc = $kernel ? {
     "Linux"  => "/etc/monit",
     "Darwin" => "/opt/local/etc/monit"
   }
-  $monitddir = "${monitetc}/conf.d"
+  $monitddir = "${monitetc}/monitrc.d"
   $monitservice = $kernel ? {
     "Linux"  => "monit",
     "Darwin" => "com.mmonit.monit"
   }
 
-  package { "monit": ensure => $ensure }
+  Monit::Process {
+    require => File["${monitddir}"] }
+
+  package { "monit":
+    ensure => $ensure ? {
+      'present' => 'latest',
+      default   => $ensure,
+    }
+  }
 
   # some variables
-  $monit_runinterval = 120
+  File {
+    require => Package["monit"],
+    owner   => 'root',
+  }
 
   file { ["${monitetc}", "${monitddir}"]:
-    ensure   => $ensure ? {
+    ensure => $ensure ? {
       "present" => "directory",
       default   => "absent",
     },
-    require  => Package["monit"],
-    owner    => root,
-    mode     => 0700,
-    checksum => mtime,
+    mode   => 0700,
   }
 
   file { "${monitetc}/monitrc":
     content => template("monit/monitrc.erb"),
-    require => Package["monit"],
-    owner   => root,
     mode    => 0600,
     notify  => Service["${monitservice}"],
     ensure  => $ensure,
   }
 
-  #  tidy{"/var/run/monit.state":
-  #    age => "1d",
-  # notify => Service["${monitservice}"],
-  #  }
   service { "${monitservice}":
     ensure    => $ensure ? {
       "present" => true,
@@ -74,16 +76,15 @@ class monit ($ensure = "present") {
 
   case $kernel {
     "Linux" : {
-      File {
-        ensure => $ensure, }
       $startup = $ensure ? {
-        "present" => 1,
-        default   => 0
+        "present" => 'yes',
+        default   => 'no'
       }
 
       file { "/etc/default/monit":
         content => template("monit/etc_default_monit.erb"),
         mode    => 0600,
+        notify  => Service["${monitservice}"],
       }
     }
   }
@@ -127,10 +128,10 @@ class monit ($ensure = "present") {
   # 	      stop program  = "/etc/init.d/sysklogd stop"
   # 	      if 2 restarts within 5 cycles then timeout+
   #
-  define process ($process_name = "", $pidfile = "", $start = "", $stop = "", $additional = "", $ensure = "present") {
+  define process ($process_name = '', $pidfile = '', $start = '', $stop = '', $additional = '', $ensure = 'present') {
     if defined(Class['monit']) {
       case $kernel {
-        "Linux" : {
+        'Linux' : {
           $process_name_real = $process_name ? {
             ""      => $name,
             default => $process_name,
@@ -148,15 +149,16 @@ class monit ($ensure = "present") {
             default => $stop,
           }
 
-          file { "${monit::monitetc}/conf.d/${process_name_real}.conf":
+          file { "${monit::monitddir}/${process_name_real}.conf":
             ensure  => $ensure,
-            content => template("monit/process.erb"),
+            content => template('monit/process.erb'),
             owner   => root,
             mode    => 0600,
-            notify  => Service["monit"],
+            notify  => Service['monit'],
           }
         }
       }
+
     }
   }
 }

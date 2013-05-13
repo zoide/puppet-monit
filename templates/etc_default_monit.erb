@@ -6,7 +6,7 @@
 # /bin/sh from /etc/init.d/monit.
 
 # You must set this variable to yes for monit to start
-START=yes
+START=<%= startup %>
 
 # Options to pass to monit
-#MONIT_OPTS=
+MONIT_OPTS='-s /var/lib/monit/state'
